@@ -1,0 +1,186 @@
+// Nutritionist WhatsApp Booking Assistant - Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions  Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model ClinicConfig {
+  id                    String   @id @default(cuid())
+  clinicName            String
+  doctorName            String
+  address               String?
+  phone                 String?
+  email                 String?
+  timezone              String   @default("Europe/Rome")
+  workingHours          Json     // { "mon": { "open": "09:00", "close": "18:00" }, ... }
+  cancellationPolicy    String?
+  defaultLanguage       String   @default("it")
+  medicalFallbackMessage String  @default("The doctor will reply to you shortly.")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model FAQEntry {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  language  String   @default("it")
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  category  String   @default("general") // hours, location, pricing, booking, cancellation, general
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  nameIt      String?
+  durationMin Int      @default(60)
+  description String?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bookings   Booking[]
+}
+
+model Patient {
+  id        String   @id @default(cuid())
+  fullName  String
+  phone     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  conversations Conversation[]
+  bookings  Booking[]
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  status        ConversationStatus @default(ACTIVE)
+  currentFlow   String   @default("idle")
+  currentStep   String?
+  language      String   @default("it")
+  handoff       Boolean  @default(false)
+  handoffReason String?
+  handoffAt     DateTime?
+  lastMessageAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  messages      Message[]
+  bookingData   Json?    // Temporary booking state: { name, service, date, time }
+}
+
+enum ConversationStatus {
+  ACTIVE
+  HANDOFF
+  CLOSED
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction      MessageDirection
+  content        String
+  messageType    String   @default("text")
+  meta           Json?
+  createdAt      DateTime @default(now())
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model Booking {
+  id              String   @id @default(cuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  serviceId       String
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  calendarEventId String?
+  appointmentAt   DateTime
+  status          BookingStatus @default(CONFIRMED)
+  notes           String?
+  source          String   @default("whatsapp")
+  createdAt       DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  scheduledMessages ScheduledMessage[]
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+model FollowUpTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  trigger     String   // BEFORE_24H, BEFORE_2H, AFTER_1D, AFTER_3D
+  messageIt   String
+  messageEn   String?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  scheduledMessages ScheduledMessage[]
+}
+
+model ScheduledMessage {
+  id                 String   @id @default(cuid())
+  bookingId          String?
+  booking            Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  templateId         String?
+  template           FollowUpTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  patientPhone       String
+  content            String
+  scheduledFor       DateTime
+  sentAt             DateTime?
+  status             ScheduledMessageStatus @default(PENDING)
+  createdAt          DateTime @default(now())
+}
+
+enum ScheduledMessageStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+}
