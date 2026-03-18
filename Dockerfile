@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20 AS base
 
 WORKDIR /app
 
@@ -14,7 +14,6 @@ RUN npm run build
 FROM base AS runner
 ENV NODE_ENV=production
 COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/scripts ./scripts
