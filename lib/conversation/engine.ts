@@ -159,7 +159,6 @@ export async function processIncomingMessage(
       return { replies, conversationId: conv.id };
     }
 
-    const openai = new OpenAI();
     const context = {
       clinicName: clinic.clinicName,
       doctorName: clinic.doctorName,
@@ -171,6 +170,7 @@ export async function processIncomingMessage(
       cancellationPolicy: clinic.cancellationPolicy ?? undefined,
       defaultLanguage: clinic.defaultLanguage ?? "it",
     };
+    const openai = new OpenAI();
     const reply = await generateOrganizationalResponse(messageText, context, openai);
     await sendFn(patientPhone, reply);
     await saveOutboundMessage(conv.id, reply);
@@ -196,7 +196,6 @@ export async function processIncomingMessage(
       return { replies, conversationId: conv.id };
     }
 
-    const openai = new OpenAI();
     const context = {
       clinicName: clinic.clinicName,
       doctorName: clinic.doctorName,
@@ -208,6 +207,7 @@ export async function processIncomingMessage(
       cancellationPolicy: clinic.cancellationPolicy ?? undefined,
       defaultLanguage: clinic.defaultLanguage ?? "it",
     };
+    const openai = new OpenAI();
     const reply = await generateOrganizationalResponse(messageText, context, openai);
     await sendFn(patientPhone, reply);
     await saveOutboundMessage(conv.id, reply);

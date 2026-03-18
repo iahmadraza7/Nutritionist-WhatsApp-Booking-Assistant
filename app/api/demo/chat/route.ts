@@ -23,25 +23,33 @@ export async function POST(request: NextRequest) {
   const { demoId, message } = parsed.data;
   const phone = demoPhone(demoId);
 
-  const result = await processIncomingMessage(phone, "Demo Patient", message, {
-    channel: "demo_web",
-  });
+  try {
+    const result = await processIncomingMessage(phone, "Demo Patient", message, {
+      channel: "demo_web",
+    });
 
-  const messages = await prisma.message.findMany({
-    where: { conversationId: result.conversationId },
-    orderBy: { createdAt: "asc" },
-    take: 200,
-  });
+    const messages = await prisma.message.findMany({
+      where: { conversationId: result.conversationId },
+      orderBy: { createdAt: "asc" },
+      take: 200,
+    });
 
-  const conversation = await prisma.conversation.findUnique({
-    where: { id: result.conversationId },
-    select: { id: true, handoff: true, currentFlow: true, status: true },
-  });
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: result.conversationId },
+      select: { id: true, handoff: true, currentFlow: true, status: true },
+    });
 
-  return NextResponse.json({
-    conversation,
-    replies: result.replies,
-    messages,
-  });
+    return NextResponse.json({
+      conversation,
+      replies: result.replies,
+      messages,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json(
+      { error: "DEMO_CHAT_FAILED", message: msg },
+      { status: 500 }
+    );
+  }
 }
 
