@@ -19,8 +19,10 @@ export async function createSession(adminId: string): Promise<void> {
   await prisma.session.create({ data: { adminId, token, expiresAt } });
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://"),
+    // For this MVP we keep the cookie non-httpOnly and non-secure
+    // so that it works reliably over plain HTTP on the VPS.
+    httpOnly: false,
+    secure: false,
     sameSite: "lax",
     maxAge: SESSION_MAX_AGE,
     path: "/",
