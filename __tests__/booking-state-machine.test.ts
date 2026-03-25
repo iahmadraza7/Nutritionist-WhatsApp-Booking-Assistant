@@ -24,9 +24,20 @@ describe("processBookingStep", () => {
       userMessage: "Mario Rossi",
       services: mockServices,
     });
-    expect(r.nextState).toBe("awaiting_service");
+    expect(r.nextState).toBe("awaiting_contact");
     expect(r.bookingData.name).toBe("Mario Rossi");
-    expect(r.reply).toContain("visita");
+    expect(r.reply).toContain("WhatsApp");
+  });
+
+  it("awaiting_contact asks for formatted phone input", () => {
+    const r = processBookingStep({
+      currentState: "awaiting_contact",
+      bookingData: { name: "Mario Rossi" },
+      userMessage: "3331234567",
+      services: mockServices,
+    });
+    expect(r.nextState).toBe("awaiting_contact");
+    expect(r.reply).toContain("numero WhatsApp");
   });
 
   it("awaiting_service rejects invalid", () => {
@@ -94,5 +105,41 @@ describe("processBookingStep", () => {
       services: mockServices,
     });
     expect(r.nextState).toBe("idle");
+  });
+
+  it("awaiting_reschedule_selection accepts numeric choice", () => {
+    const r = processBookingStep({
+      currentState: "awaiting_reschedule_selection",
+      bookingData: {
+        rescheduleOptions: [
+          {
+            id: "b1",
+            label: "Prima visita - 30/03/2026 15:00",
+            serviceId: "s1",
+            serviceName: "Prima visita",
+          },
+        ],
+      },
+      userMessage: "1",
+      services: mockServices,
+    });
+    expect(r.nextState).toBe("awaiting_reschedule_date");
+    expect(r.bookingData.selectedBookingId).toBe("b1");
+  });
+
+  it("awaiting_reschedule_confirmation yes -> rescheduled", () => {
+    const r = processBookingStep({
+      currentState: "awaiting_reschedule_confirmation",
+      bookingData: {
+        selectedBookingId: "b1",
+        selectedBookingLabel: "Prima visita - 30/03/2026 15:00",
+        date: "2026-04-02",
+        time: "16:00",
+      },
+      userMessage: "sì",
+      services: mockServices,
+    });
+    expect(r.nextState).toBe("rescheduled");
+    expect(r.done).toBe(true);
   });
 });

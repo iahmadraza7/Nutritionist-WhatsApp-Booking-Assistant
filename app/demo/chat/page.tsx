@@ -1,6 +1,6 @@
-import DemoChat from "./ui";
+import ChatClient from "@/app/chat/ChatClient";
 
 export default function DemoChatPage() {
-  return <DemoChat />;
+  return <ChatClient />;
 }
 

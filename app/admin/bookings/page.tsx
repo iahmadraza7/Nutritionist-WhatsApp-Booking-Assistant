@@ -31,7 +31,7 @@ export default async function BookingsPage() {
               <tr key={b.id} className="border-t border-slate-100">
                 <td className="p-3">
                   <p className="font-medium">{b.patient.fullName}</p>
-                  <p className="text-slate-500 text-xs">{b.patient.phone}</p>
+                  <p className="text-slate-500 text-xs">{b.patient.phone ?? "-"}</p>
                 </td>
                 <td className="p-3">{b.service.nameIt ?? b.service.name}</td>
                 <td className="p-3">{b.appointmentAt.toLocaleString("it-IT")}</td>

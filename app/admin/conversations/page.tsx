@@ -47,8 +47,8 @@ export default async function ConversationsPage({
           <tbody>
             {conversations.map((c) => (
               <tr key={c.id} className="border-t border-slate-100">
-                <td className="p-3">{c.patient.fullName}</td>
-                <td className="p-3">{c.patient.phone}</td>
+                <td className="p-3">{c.patient?.fullName ?? "Web visitor"}</td>
+                <td className="p-3">{c.patient?.phone ?? c.sessionKey ?? "-"}</td>
                 <td className="p-3">
                   <span
                     className={`px-2 py-0.5 rounded text-xs ${

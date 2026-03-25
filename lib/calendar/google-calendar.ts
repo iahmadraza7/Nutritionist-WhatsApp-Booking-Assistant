@@ -26,7 +26,8 @@ export async function getCalendarClient() {
 export async function listAvailableSlots(
   date: string,
   durationMin: number = 60,
-  workingHours?: Record<string, { open: string; close: string } | null>
+  workingHours?: Record<string, { open: string; close: string } | null>,
+  excludeEventId?: string | null
 ): Promise<string[]> {
   const calendar = await getCalendarClient();
   const calendarId = process.env.GOOGLE_CALENDAR_ID ?? "primary";
@@ -51,10 +52,12 @@ export async function listAvailableSlots(
     orderBy: "startTime",
   });
 
-  const busy: { start: Date; end: Date }[] = (response.data.items ?? []).map((e) => ({
-    start: new Date(e.start?.dateTime ?? e.start?.date ?? 0),
-    end: new Date(e.end?.dateTime ?? e.end?.date ?? 0),
-  }));
+  const busy: { start: Date; end: Date }[] = (response.data.items ?? [])
+    .filter((e) => e.id !== excludeEventId)
+    .map((e) => ({
+      start: new Date(e.start?.dateTime ?? e.start?.date ?? 0),
+      end: new Date(e.end?.dateTime ?? e.end?.date ?? 0),
+    }));
 
   const slots: string[] = [];
   const workStartMin = openH * 60 + (openM || 0);
@@ -84,7 +87,9 @@ export async function listAvailableSlots(
 
 export async function createCalendarEvent(
   bookingData: BookingData,
-  patientPhone: string
+  patientPhone: string,
+  durationMin: number,
+  sourceLabel: string
 ): Promise<string | null> {
   if (!bookingData.date || !bookingData.time || !bookingData.serviceName) {
     return null;
@@ -98,17 +103,54 @@ export async function createCalendarEvent(
 
   const start = new Date(year, month - 1, day, hour, min, 0);
   const end = new Date(start);
-  end.setMinutes(end.getMinutes() + 60);
+  end.setMinutes(end.getMinutes() + durationMin);
 
   const event = {
-    summary: `[WhatsApp] ${bookingData.serviceName} - ${bookingData.name}`,
-    description: `Prenotazione da WhatsApp Bot\nPaziente: ${bookingData.name}\nTelefono: ${patientPhone}\nServizio: ${bookingData.serviceName}`,
+    summary: `[${sourceLabel}] ${bookingData.serviceName} - ${bookingData.name}`,
+    description: `Prenotazione da ${sourceLabel}\nPaziente: ${bookingData.name}\nTelefono WhatsApp: ${patientPhone}\nServizio: ${bookingData.serviceName}`,
     start: { dateTime: start.toISOString(), timeZone: process.env.TZ ?? "Europe/Rome" },
     end: { dateTime: end.toISOString(), timeZone: process.env.TZ ?? "Europe/Rome" },
   };
 
   const res = await calendar.events.insert({
     calendarId,
+    requestBody: event,
+  });
+
+  return res.data.id ?? null;
+}
+
+export async function updateCalendarEvent(
+  calendarEventId: string,
+  bookingData: BookingData,
+  patientPhone: string,
+  durationMin: number,
+  sourceLabel: string
+): Promise<string | null> {
+  if (!bookingData.date || !bookingData.time || !bookingData.serviceName || !calendarEventId) {
+    return null;
+  }
+
+  const calendar = await getCalendarClient();
+  const calendarId = process.env.GOOGLE_CALENDAR_ID ?? "primary";
+
+  const [year, month, day] = bookingData.date.split("-").map(Number);
+  const [hour, min] = bookingData.time.split(":").map(Number);
+
+  const start = new Date(year, month - 1, day, hour, min, 0);
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + durationMin);
+
+  const event = {
+    summary: `[${sourceLabel}] ${bookingData.serviceName} - ${bookingData.name}`,
+    description: `Prenotazione aggiornata da ${sourceLabel}\nPaziente: ${bookingData.name}\nTelefono WhatsApp: ${patientPhone}\nServizio: ${bookingData.serviceName}`,
+    start: { dateTime: start.toISOString(), timeZone: process.env.TZ ?? "Europe/Rome" },
+    end: { dateTime: end.toISOString(), timeZone: process.env.TZ ?? "Europe/Rome" },
+  };
+
+  const res = await calendar.events.update({
+    calendarId,
+    eventId: calendarEventId,
     requestBody: event,
   });
 

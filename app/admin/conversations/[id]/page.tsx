@@ -31,9 +31,9 @@ export default async function ConversationDetailPage({
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
-            {conversation.patient.fullName}
+            {conversation.patient?.fullName ?? "Web visitor"}
           </h1>
-          <p className="text-slate-600">{conversation.patient.phone}</p>
+          <p className="text-slate-600">{conversation.patient?.phone ?? conversation.sessionKey ?? "-"}</p>
           <p className="text-sm text-slate-500 mt-1">
             Status: {conversation.handoff ? "Handoff (Doctor replying)" : "Active"}
             {conversation.handoff && (

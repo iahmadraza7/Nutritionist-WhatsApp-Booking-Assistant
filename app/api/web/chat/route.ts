@@ -4,13 +4,9 @@ import { processIncomingMessage } from "@/lib/conversation/engine";
 import { z } from "zod";
 
 const bodySchema = z.object({
-  demoId: z.string().min(1),
+  sessionId: z.string().min(1),
   message: z.string().min(1).max(2000),
 });
-
-function demoSessionKey(demoId: string) {
-  return `demo_session_${demoId}`.slice(0, 80);
-}
 
 export async function POST(request: NextRequest) {
   const json = await request.json().catch(() => null);
@@ -19,11 +15,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { demoId, message } = parsed.data;
-  const sessionKey = demoSessionKey(demoId);
+  const { sessionId, message } = parsed.data;
 
   try {
-    const result = await processIncomingMessage(sessionKey, "Demo Patient", message, {
+    const result = await processIncomingMessage(sessionId, "Web Visitor", message, {
       channel: "web",
     });
 
@@ -35,7 +30,12 @@ export async function POST(request: NextRequest) {
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: result.conversationId },
-      select: { id: true, handoff: true, currentFlow: true, status: true },
+      select: {
+        id: true,
+        handoff: true,
+        currentFlow: true,
+        status: true,
+      },
     });
 
     return NextResponse.json({
@@ -43,12 +43,11 @@ export async function POST(request: NextRequest) {
       replies: result.replies,
       messages,
     });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "DEMO_CHAT_FAILED", message: msg },
+      { error: "WEB_CHAT_FAILED", message },
       { status: 500 }
     );
   }
 }
-

@@ -7,7 +7,14 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { services } = await request.json() as {
-    services: Array<{ id: string; name: string; nameIt: string | null; durationMin: number; order: number }>;
+    services: Array<{
+      id: string;
+      name: string;
+      nameIt: string | null;
+      serviceType: string;
+      durationMin: number;
+      order: number;
+    }>;
   };
 
   for (const s of services ?? []) {
@@ -16,6 +23,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: s.name,
         nameIt: s.nameIt,
+        serviceType: s.serviceType ?? "GENERAL",
         durationMin: s.durationMin,
         order: s.order,
       },

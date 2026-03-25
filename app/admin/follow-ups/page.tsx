@@ -33,6 +33,7 @@ export default async function FollowUpsPage() {
                 <tr>
                   <th className="text-left p-3 font-medium">Patient Phone</th>
                   <th className="text-left p-3 font-medium">Template</th>
+                  <th className="text-left p-3 font-medium">Message</th>
                   <th className="text-left p-3 font-medium">Scheduled For</th>
                   <th className="text-left p-3 font-medium">Status</th>
                 </tr>
@@ -42,6 +43,7 @@ export default async function FollowUpsPage() {
                   <tr key={s.id} className="border-t border-slate-100">
                     <td className="p-3">{s.patientPhone}</td>
                     <td className="p-3">{s.template?.name ?? "-"}</td>
+                    <td className="p-3 max-w-sm truncate">{s.content}</td>
                     <td className="p-3">{s.scheduledFor.toLocaleString("it-IT")}</td>
                     <td className="p-3">{s.status}</td>
                   </tr>

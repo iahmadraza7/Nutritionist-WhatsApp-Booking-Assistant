@@ -7,6 +7,7 @@ const serviceSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   nameIt: z.string().nullable().optional(),
+  serviceType: z.enum(["FIRST_VISIT", "WEIGHING", "GENERAL"]).default("GENERAL"),
   durationMin: z.number().int().min(10).max(240),
   description: z.string().nullable().optional(),
   active: z.boolean(),
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: s.name,
         nameIt: s.nameIt ?? null,
+        serviceType: s.serviceType,
         durationMin: s.durationMin,
         description: s.description ?? null,
         active: s.active,
@@ -47,6 +49,7 @@ export async function PUT() {
     data: {
       name: "New Service",
       nameIt: "Nuovo servizio",
+      serviceType: "GENERAL",
       durationMin: 60,
       description: null,
       active: true,

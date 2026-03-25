@@ -7,6 +7,7 @@ interface Service {
   id: string;
   name: string;
   nameIt: string | null;
+  serviceType: string;
   durationMin: number;
   description: string | null;
   order: number;
@@ -42,6 +43,7 @@ export default function ServicesForm({ services }: { services: Service[] }) {
       id: s.id,
       name: s.name,
       nameIt: s.nameIt,
+      serviceType: s.serviceType,
       durationMin: s.durationMin,
       description: s.description,
       active: s.active,
@@ -94,6 +96,18 @@ export default function ServicesForm({ services }: { services: Service[] }) {
               onChange={(e) => update(s.id, { durationMin: parseInt(e.target.value || "60", 10) })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Service Type</label>
+            <select
+              value={s.serviceType}
+              onChange={(e) => update(s.id, { serviceType: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md"
+            >
+              <option value="FIRST_VISIT">First visit</option>
+              <option value="WEIGHING">Weighing</option>
+              <option value="GENERAL">General</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>

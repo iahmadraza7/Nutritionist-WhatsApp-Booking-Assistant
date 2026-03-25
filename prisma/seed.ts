@@ -25,19 +25,19 @@ async function main() {
   if (!clinic) {
     await prisma.clinicConfig.create({
       data: {
-        clinicName: "Studio Nutrizionale Dott. Rossi",
-        doctorName: "Dott. Marco Rossi",
-        address: "Via Roma 42, 20100 Milano",
-        phone: "+39 02 1234567",
+        clinicName: "Studio Nutrizionale",
+        doctorName: "Dottore",
+        address: "Via Limitone 47, San Marcellino (CE), 81030, Italia",
+        phone: "+39 333 123 4567",
         email: "info@studionutrizionale.it",
         timezone: "Europe/Rome",
         workingHours: {
-          mon: { open: "09:00", close: "18:00" },
-          tue: { open: "09:00", close: "18:00" },
-          wed: { open: "09:00", close: "18:00" },
-          thu: { open: "09:00", close: "18:00" },
-          fri: { open: "09:00", close: "18:00" },
-          sat: { open: "09:00", close: "13:00" },
+          mon: { open: "15:00", close: "19:00" },
+          tue: { open: "15:00", close: "19:00" },
+          wed: { open: "15:00", close: "19:00" },
+          thu: { open: "15:00", close: "19:00" },
+          fri: { open: "15:00", close: "19:00" },
+          sat: null,
           sun: null,
         },
         cancellationPolicy: "Annullare almeno 24 ore prima dell'appuntamento.",
@@ -96,9 +96,20 @@ async function main() {
   if (servicesCount === 0) {
     await prisma.service.createMany({
       data: [
-        { name: "First Consultation", nameIt: "Prima visita", durationMin: 60, order: 0 },
-        { name: "Follow-up Consultation", nameIt: "Visita di controllo", durationMin: 45, order: 1 },
-        { name: "Nutritional Plan Review", nameIt: "Revisione piano alimentare", durationMin: 30, order: 2 },
+        {
+          name: "First Visit",
+          nameIt: "Prima visita",
+          serviceType: "FIRST_VISIT",
+          durationMin: 60,
+          order: 0,
+        },
+        {
+          name: "Weighing",
+          nameIt: "Controllo peso",
+          serviceType: "WEIGHING",
+          durationMin: 20,
+          order: 1,
+        },
       ],
     });
     console.log("Services created");
@@ -109,36 +120,30 @@ async function main() {
     await prisma.followUpTemplate.createMany({
       data: [
         {
-          name: "Reminder 24h",
+          name: "Promemoria appuntamento",
           trigger: "BEFORE_24H",
-          messageIt: "Gentile paziente, le ricordiamo l'appuntamento di domani. A domani!",
-          messageEn: "Dear patient, we remind you of tomorrow's appointment. See you soon!",
+          offsetDirection: "BEFORE",
+          offsetValue: 1,
+          offsetUnit: "DAYS",
+          serviceScope: "ALL",
+          messageIt:
+            "Ciao! 😊\nTi ricordo l'appuntamento di domani, {{appointment_date}}, alle ore {{appointment_time}} per {{service_name}}.\nSe hai bisogno di spostare l'orario o hai imprevisti, fammi sapere.\nA domani!",
+          messageEn: null,
           active: true,
           order: 0,
         },
         {
-          name: "Reminder 2h",
-          trigger: "BEFORE_2H",
-          messageIt: "Il suo appuntamento è tra 2 ore. La aspettiamo!",
-          messageEn: "Your appointment is in 2 hours. We look forward to seeing you!",
+          name: "Follow-up dieta",
+          trigger: "AFTER_5D",
+          offsetDirection: "AFTER",
+          offsetValue: 5,
+          offsetUnit: "DAYS",
+          serviceScope: "FIRST_VISIT_ONLY",
+          messageIt:
+            "Ciao! 😊\nVolevo chiederti come sta andando la dieta dopo la tua {{service_name}} del {{appointment_date}}.\nHai riscontrato difficoltà oppure ti stai trovando bene?\nSe hai dubbi o bisogno di qualche chiarimento, scrivimi pure!\nA presto 💬",
+          messageEn: null,
           active: true,
           order: 1,
-        },
-        {
-          name: "Follow-up 1 day",
-          trigger: "AFTER_1D",
-          messageIt: "Come si sente dopo la visita di ieri? Se ha domande, siamo a disposizione.",
-          messageEn: "How are you feeling after yesterday's visit? We're here if you have questions.",
-          active: true,
-          order: 2,
-        },
-        {
-          name: "Check-in 3 days",
-          trigger: "AFTER_3D",
-          messageIt: "Buongiorno! Come sta andando con il piano alimentare?",
-          messageEn: "Good morning! How is the nutrition plan going?",
-          active: true,
-          order: 3,
         },
       ],
     });

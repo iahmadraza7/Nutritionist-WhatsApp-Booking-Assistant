@@ -7,7 +7,7 @@ const bodySchema = z.object({
 });
 
 function demoPhone(demoId: string) {
-  return `demo_${demoId}`.slice(0, 40);
+  return `demo_session_${demoId}`.slice(0, 80);
 }
 
 export async function POST(request: NextRequest) {
@@ -17,12 +17,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const phone = demoPhone(parsed.data.demoId);
-  const patient = await prisma.patient.findUnique({ where: { phone } });
-  if (!patient) return NextResponse.json({ ok: true });
+  const sessionKey = demoPhone(parsed.data.demoId);
+  const conversations = await prisma.conversation.findMany({
+    where: {
+      channel: "WEB",
+      sessionKey,
+    },
+    select: { id: true },
+  });
+  if (conversations.length === 0) return NextResponse.json({ ok: true });
 
-  // Cascade deletes take care of conversations/messages/bookings.
-  await prisma.patient.delete({ where: { id: patient.id } });
+  await prisma.message.deleteMany({
+    where: {
+      conversationId: { in: conversations.map((conversation) => conversation.id) },
+    },
+  });
+  await prisma.conversation.deleteMany({
+    where: { id: { in: conversations.map((conversation) => conversation.id) } },
+  });
   return NextResponse.json({ ok: true });
 }
 

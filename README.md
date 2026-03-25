@@ -1,144 +1,118 @@
-#   
+# Nutritionist Hybrid Booking Chatbot
 
-AI-powered WhatsApp assistant for a nutritionist: handles organizational questions, appointment booking, medical query detection (handoff to doctor), and follow-up messages.
+Hybrid booking system for a nutritionist clinic:
 
-## Features
+- public web chatbot for FAQs, booking, and rescheduling
+- Google Calendar as the availability/source-of-truth layer
+- WhatsApp used for automatic reminders and follow-ups
+- medical questions redirected to the doctor instead of answered by AI
 
-- **Organizational FAQs**: Opening hours, location, prices, booking info
-- **Appointment booking**: Multi-step flow with Google Calendar sync
-- **Medical query detection**: Stops AI, sends "The doctor will reply to you shortly."
-- **Handoff mode**: Doctor continues manually from WhatsApp Business
-- **Follow-up messages**: Reminders and post-visit check-ins
-- **Admin panel**: Clinic settings, conversations, bookings, follow-up templates
+## Main Features
 
-## Prerequisites
+- **Public chat route** at `/chat`
+- **Booking flow** with full name, WhatsApp number, service, date, time, and confirmation
+- **Rescheduling flow** that finds future bookings by WhatsApp number
+- **Medical escalation** on web chat with redirect to doctor WhatsApp/manual contact
+- **Google Calendar sync** for create and reschedule operations
+- **Admin panel** for clinic settings, services, FAQs, bookings, conversations, and follow-up templates
+- **Flexible follow-up templates** with editable relative timing and placeholders
 
-- Node.js 20+
-- PostgreSQL
-- Meta WhatsApp Business API account
-- OpenAI API key
-- Google Cloud project with Calendar API
+Supported placeholders in reminder/follow-up text:
+
+- `{{patient_name}}`
+- `{{appointment_date}}`
+- `{{appointment_time}}`
+- `{{service_name}}`
+
+## Stack
+
+- Next.js 14
+- Prisma + PostgreSQL
+- OpenAI API
+- Google Calendar API
+- WhatsApp Cloud API
 
 ## Quick Start
-
-### 1. Clone and install
 
 ```bash
 cd vakelien
 npm install
-```
-
-### 2. Environment
-
-```bash
-# Windows PowerShell:
 Copy-Item .env.example .env
-
-# Mac/Linux:
-cp .env.example .env
 ```
 
-Edit `.env` and set `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/nutritionist_booking?schema=public"`
+Set your real values in `.env`, especially:
 
-### 3. Database (PostgreSQL required)
+- `DATABASE_URL`
+- `OPENAI_API_KEY`
+- `GOOGLE_CALENDAR_CLIENT_ID`
+- `GOOGLE_CALENDAR_CLIENT_SECRET`
+- `GOOGLE_CALENDAR_REFRESH_TOKEN`
+- `GOOGLE_CALENDAR_ID`
+- `WHATSAPP_ACCESS_TOKEN`
+- `WHATSAPP_PHONE_NUMBER_ID`
+- `WHATSAPP_VERIFY_TOKEN`
+- `WHATSAPP_APP_SECRET`
 
-**Option A – Docker (recommended if you have Docker):**
-```bash
-npm run db:start
-```
+Then initialize the database:
 
-When the DB is up, apply schema changes and seed:
 ```bash
 npx prisma generate
 npm run db:push
 npm run db:seed
 ```
 
-**Option B – Full docker-compose:**
-```bash
-docker-compose up -d db
-```
-
-**Option C – Local PostgreSQL:** Start your PostgreSQL service and ensure it listens on port 5432.
-
-Then:
-```bash
-npm run db:push
-npm run db:seed
-```
-
-### 4. Run
+Run the app:
 
 ```bash
 npm run dev
 ```
 
-Admin: http://localhost:3000/admin  
-Login: `admin@clinic.local` / `changeme123` (change in seed or env)
-
-### 5. Scheduler (follow-ups)
-
-In a separate terminal:
+Run the scheduler in a second terminal:
 
 ```bash
 npm run scheduler
 ```
 
-## WhatsApp Setup
+## Routes
 
-1. Create a Meta Business account and WhatsApp Business API app
-2. Get Phone Number ID and Access Token
-3. Set webhook URL: `https://your-domain.com/api/webhooks/whatsapp`
-4. Verify token: use `WHATSAPP_VERIFY_TOKEN` from .env
-5. Subscribe to `messages` webhook
+- Public chat: `http://localhost:3000/chat`
+- Admin: `http://localhost:3000/admin`
+- Demo alias: `http://localhost:3000/demo/chat`
 
-## Google Calendar Setup
+Default admin login:
 
-1. Create a Google Cloud project
-2. Enable Calendar API
-3. Create OAuth 2.0 credentials (Desktop app)
-4. Use OAuth Playground to get refresh token:
-   - https://developers.google.com/oauthplayground
-   - Scope: `https://www.googleapis.com/auth/calendar`
-5. Set `GOOGLE_CALENDAR_ID` (e.g. `primary` or your calendar ID)
+- Email: `admin@clinic.local`
+- Password: `changeme123`
 
-## Demo Flows
+## Default Clinic Seed
 
-1. **Organizational**: "Quali sono gli orari?" → Bot answers from clinic config
-2. **Booking**: "Voglio prenotare" → Bot collects name, service, date, time → Confirms
-3. **Medical**: "Che dieta per il diabete?" → "Il dottore le risponderà a breve." + handoff
-4. **Follow-up**: Scheduler creates reminders 24h/2h before, 1d/3d after appointments
+The seed sets MVP-friendly defaults for this nutritionist use case:
 
-## Project Structure
+- Monday-Friday: `15:00-19:00`
+- Saturday/Sunday: closed
+- Services:
+  - First visit: `60 min`
+  - Weighing: `20 min`
+- Reminder template: `1 day before`
+- Diet follow-up template: `5 days after`, first visit only
 
-```
-/app
-  /admin          - Admin panel pages
-  /api            - API routes (webhooks, auth, admin)
-/components       - (optional)
-/lib
-  /ai             - Intent classification, organizational response
-  /booking        - State machine
-  /calendar       - Google Calendar
-  /conversation   - Engine
-  /whatsapp       - Client
-/prisma           - Schema, migrations, seed
-/scripts          - Scheduler
-/docs             - Architecture
-```
-
-## Docker
+## Testing
 
 ```bash
-docker-compose up -d
+npm test -- --runInBand
+npm run build
 ```
 
-Runs app on :3000, scheduler, PostgreSQL on :5432.
+## Security Notes
 
-## Cost Optimization
+- Keep live API keys only in `.env`
+- Do not store plaintext keys in repo files
+- Revoke and regenerate any key that was previously shared in chat or copied into local text files
 
-- Single Next.js app
-- gpt-4o-mini for classification/responses
-- No vector DB, no RAG
-- Lightweight cron for follow-ups
-- VPS-friendly (see DEPLOYMENT.md)
+## Cost Notes
+
+For a small clinic with around 40 patients/month, the system is designed to stay lightweight:
+
+- a small number of OpenAI chat/classification calls
+- one reminder plus optional follow-up per booking
+- single Next.js app plus lightweight scheduler

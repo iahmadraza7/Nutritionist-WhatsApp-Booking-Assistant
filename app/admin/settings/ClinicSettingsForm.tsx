@@ -36,23 +36,23 @@ export default function ClinicSettingsForm({ clinic }: { clinic: Clinic | null }
   const [saving, setSaving] = useState(false);
   const [workingHours, setWorkingHours] = useState<WorkingHours>(
     ((clinic?.workingHours as WorkingHours | undefined) ?? {
-    mon: { open: "09:00", close: "18:00" },
-    tue: { open: "09:00", close: "18:00" },
-    wed: { open: "09:00", close: "18:00" },
-    thu: { open: "09:00", close: "18:00" },
-    fri: { open: "09:00", close: "18:00" },
+    mon: { open: "15:00", close: "19:00" },
+    tue: { open: "15:00", close: "19:00" },
+    wed: { open: "15:00", close: "19:00" },
+    thu: { open: "15:00", close: "19:00" },
+    fri: { open: "15:00", close: "19:00" },
     sat: null,
     sun: null,
   }) as WorkingHours
   );
 
   function setClosed(day: DayKey, closed: boolean) {
-    setWorkingHours((prev) => ({ ...prev, [day]: closed ? null : (prev[day] ?? { open: "09:00", close: "18:00" }) }));
+    setWorkingHours((prev) => ({ ...prev, [day]: closed ? null : (prev[day] ?? { open: "15:00", close: "19:00" }) }));
   }
   function setTime(day: DayKey, key: "open" | "close", value: string) {
     setWorkingHours((prev) => ({
       ...prev,
-      [day]: prev[day] ? { ...prev[day]!, [key]: value } : { open: "09:00", close: "18:00", [key]: value } as any,
+      [day]: prev[day] ? { ...prev[day]!, [key]: value } : { open: "15:00", close: "19:00", [key]: value } as any,
     }));
   }
 
@@ -166,7 +166,7 @@ export default function ClinicSettingsForm({ clinic }: { clinic: Clinic | null }
                 <div className="flex items-center gap-2 ml-auto">
                   <input
                     type="time"
-                    value={val?.open ?? "09:00"}
+                    value={val?.open ?? "15:00"}
                     disabled={closed}
                     onChange={(e) => setTime(day, "open", e.target.value)}
                     className="px-2 py-1 border border-slate-300 rounded-md disabled:opacity-50"
@@ -174,7 +174,7 @@ export default function ClinicSettingsForm({ clinic }: { clinic: Clinic | null }
                   <span className="text-slate-400">→</span>
                   <input
                     type="time"
-                    value={val?.close ?? "18:00"}
+                    value={val?.close ?? "19:00"}
                     disabled={closed}
                     onChange={(e) => setTime(day, "close", e.target.value)}
                     className="px-2 py-1 border border-slate-300 rounded-md disabled:opacity-50"
